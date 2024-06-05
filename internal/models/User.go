@@ -9,4 +9,5 @@ type User struct {
 	Password     string  `gorm:"type:varchar(100);not null"`
 	Email        *string `gorm:"type:varchar(100);default:null"` // 포인터를 사용하여 nullable 설정
 	VerifiedCode string  `gorm:"type:varchar(100);not null"`
+	Role         string  `gorm:"type:role_type;not null"` // ENUM 타입 사용
 }
