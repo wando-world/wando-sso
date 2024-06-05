@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Port string
-	Env  string
+	Port  string
+	Env   string
+	DbUrl string
 }
 
 func New() *Config {
@@ -24,8 +25,9 @@ func New() *Config {
 		log.Fatalf("[에러] %s file 불러오기 실패", envFile)
 	}
 	return &Config{
-		Port: getEnv("PORT", ":8081"), // default port
-		Env:  env,
+		Port:  getEnv("PORT", ":8081"), // default port
+		Env:   env,
+		DbUrl: getEnv("DATABASE_URL", ""),
 	}
 }
 
