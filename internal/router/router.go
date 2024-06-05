@@ -8,4 +8,5 @@ func SetupRoutes(e *echo.Echo) {
 	apiGroup := e.Group("/sso/api/v1")
 
 	SetupEnvRoutes(apiGroup)
+	SetupUserRoutes(apiGroup)
 }

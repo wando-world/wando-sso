@@ -5,10 +5,13 @@ import (
 	"github.com/wando-world/wando-sso/internal/config"
 	"github.com/wando-world/wando-sso/internal/db"
 	"github.com/wando-world/wando-sso/internal/router"
+	"github.com/wando-world/wando-sso/internal/utils"
 )
 
 func main() {
 	e := echo.New()
+
+	e.Validator = utils.NewValidator()
 
 	cfg := config.New()
 	db.InitDB(cfg.DbUrl)
