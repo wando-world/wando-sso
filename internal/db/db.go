@@ -12,7 +12,7 @@ var DB *gorm.DB
 
 func InitDB(dataSourceName string) {
 	var err error
-	DB, err = gorm.Open(postgres.Open(dataSourceName), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(dataSourceName), &gorm.Config{TranslateError: true})
 	if err != nil {
 		log.Fatalf("[에러] db 커넥션 에러 %v", err)
 	}
