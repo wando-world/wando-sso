@@ -10,7 +10,19 @@ import (
 	"net/http"
 )
 
-func CreateUserHandler(c echo.Context) error {
+type UserHandler struct {
+	Mapper         *mappers.IUserMapper
+	UserRepository *db.UserRepository
+}
+
+func NewUserHandler(mapper *mappers.IUserMapper, userRepository *db.UserRepository) *UserHandler {
+	return &UserHandler{
+		Mapper:         mapper,
+		UserRepository: userRepository,
+	}
+}
+
+func (h *UserHandler) CreateUser(c echo.Context) error {
 	var req models.CreateUserRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "입력값을 확인해주세요.")

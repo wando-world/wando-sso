@@ -4,6 +4,7 @@ go 1.21.1
 
 require (
 	github.com/go-playground/validator/v10 v10.21.0
+	github.com/google/wire v0.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/stretchr/testify v1.9.0
@@ -33,7 +34,7 @@ require (
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
