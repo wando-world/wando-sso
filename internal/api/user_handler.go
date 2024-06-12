@@ -10,12 +10,18 @@ import (
 	"net/http"
 )
 
-type UserHandler struct {
-	Mapper         *mappers.IUserMapper
-	UserRepository *db.UserRepository
+type IUserHandler interface {
+	CreateUser(c echo.Context) error
 }
 
-func NewUserHandler(mapper *mappers.IUserMapper, userRepository *db.UserRepository) *UserHandler {
+// UserHandler 구조체에 의존성을 저장
+type UserHandler struct {
+	Mapper         mappers.IUserMapper
+	UserRepository db.IUserRepository
+}
+
+// NewUserHandler 생성자 함수는 의존성을 주입
+func NewUserHandler(mapper mappers.IUserMapper, userRepository db.IUserRepository) IUserHandler {
 	return &UserHandler{
 		Mapper:         mapper,
 		UserRepository: userRepository,
@@ -31,15 +37,12 @@ func (h *UserHandler) CreateUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	mapper := mappers.NewUserMapper()
-	userRepository := db.NewUserRepository(db.DB)
-
-	user, err := mapper.CreateUserRequestToUser(req)
+	user, err := h.Mapper.CreateUserRequestToUser(req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "암호화 중 에러가 발생했습니다!\n잠시뒤 진행해 주세요!")
 	}
 
-	err = userRepository.CreateUser(&user)
+	err = h.UserRepository.CreateUser(&user)
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return echo.NewHTTPError(http.StatusConflict, "id 가 이미 있습니다!")
 	} else if err != nil {

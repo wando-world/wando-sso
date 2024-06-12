@@ -5,6 +5,10 @@ import (
 	"gorm.io/gorm"
 )
 
+type IUserRepository interface {
+	CreateUser(user *models.User) error
+}
+
 type UserRepository struct {
 	DB *gorm.DB
 }

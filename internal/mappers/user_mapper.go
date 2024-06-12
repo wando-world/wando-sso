@@ -7,13 +7,17 @@ import (
 	"github.com/wando-world/wando-sso/internal/utils"
 )
 
-type DefaultUserMapper struct{}
-
-func NewUserMapper() IUserMapper {
-	return &DefaultUserMapper{}
+type IUserMapper interface {
+	CreateUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error)
 }
 
-func (m *DefaultUserMapper) CreateUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error) {
+type UserMapper struct{}
+
+func NewUserMapper() *UserMapper {
+	return &UserMapper{}
+}
+
+func (m *UserMapper) CreateUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error) {
 	user := models.User{
 		Nickname:     req.Nickname,
 		UserID:       req.UserID,
