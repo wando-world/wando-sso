@@ -7,5 +7,6 @@ import (
 func SetupRoutes(e *echo.Echo) {
 	apiGroup := e.Group("/sso/api/v1")
 
-	SetupEnvRoutes(apiGroup)
+	SetupEnvRoutes(apiGroup.Group("/env"))
+	SetupUserRoutes(apiGroup.Group("/user"))
 }

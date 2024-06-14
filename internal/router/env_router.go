@@ -6,5 +6,5 @@ import (
 )
 
 func SetupEnvRoutes(g *echo.Group) {
-	g.GET("/env", api.EnvHandler)
+	g.GET("", api.EnvHandler)
 }
