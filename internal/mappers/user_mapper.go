@@ -11,10 +11,12 @@ type IUserMapper interface {
 	CreateUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error)
 }
 
-type UserMapper struct{}
+type UserMapper struct {
+	passwordUtils utils.IPasswordUtils
+}
 
-func NewUserMapper() *UserMapper {
-	return &UserMapper{}
+func NewUserMapper(p utils.IPasswordUtils) *UserMapper {
+	return &UserMapper{passwordUtils: p}
 }
 
 func (m *UserMapper) CreateUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error) {
@@ -24,14 +26,15 @@ func (m *UserMapper) CreateUserRequestToUser(req apiModels.CreateUserRequest) (m
 		Email:        req.Email,
 		VerifiedCode: req.VerifiedCode,
 		Role:         "GENERAL",
+		Password:     req.Password,
 	}
 
-	salt, err := utils.GenerateSalt()
+	salt, err := m.passwordUtils.GenerateSalt()
 	if err != nil {
 		return models.User{}, err
 	}
 
-	user.Password = utils.HashPassword(user.Password, salt)
+	user.Password = m.passwordUtils.HashPassword(user.Password, salt)
 	user.Salt = base64.RawStdEncoding.EncodeToString(salt)
 
 	return user, nil
