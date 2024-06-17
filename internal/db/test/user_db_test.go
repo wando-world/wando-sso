@@ -1,7 +1,8 @@
-package db
+package test
 
 import (
 	"github.com/stretchr/testify/assert"
+	db2 "github.com/wando-world/wando-sso/internal/db"
 	"github.com/wando-world/wando-sso/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -23,7 +24,7 @@ func setupUserTestDB() *gorm.DB {
 
 func TestCreateUser(t *testing.T) {
 	db := setupUserTestDB()
-	repo := NewUserRepository(db)
+	repo := db2.NewUserRepository(db)
 
 	email := "wando@naver.com"
 	testUser := &models.User{

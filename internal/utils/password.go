@@ -20,6 +20,10 @@ type IPasswordUtils interface {
 // PasswordUtils 구현체
 type PasswordUtils struct{}
 
+func NewPasswordUtils() *PasswordUtils {
+	return &PasswordUtils{}
+}
+
 // GenerateSalt 랜덤 salt 생성
 func (p *PasswordUtils) GenerateSalt() ([]byte, error) {
 	salt := make([]byte, SaltLength)

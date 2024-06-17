@@ -1,4 +1,4 @@
-package router
+package test
 
 import (
 	"github.com/labstack/echo/v4"

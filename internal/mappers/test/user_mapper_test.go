@@ -1,4 +1,4 @@
-package mappers
+package test
 
 import (
 	"encoding/base64"
@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/wando-world/wando-sso/internal/api/models"
+	"github.com/wando-world/wando-sso/internal/mappers"
 	"testing"
 )
 
@@ -37,7 +38,7 @@ func TestCreateUserRequestToUser(t *testing.T) {
 	mockUtils.On("GenerateSalt").Return([]byte("mockSalt"), nil)
 	mockUtils.On("HashPassword", "testpassword", []byte("mockSalt")).Return("hashedPassword")
 
-	mapper := NewUserMapper(mockUtils)
+	mapper := mappers.NewUserMapper(mockUtils)
 
 	email := "testemail@example.com"
 	req := models.CreateUserRequest{
@@ -64,7 +65,7 @@ func TestCreateUserRequestToUser_Error(t *testing.T) {
 	mockUtils := new(MockUtils)
 	mockUtils.On("GenerateSalt").Return(nil, fmt.Errorf("salt generation error"))
 
-	mapper := NewUserMapper(mockUtils)
+	mapper := mappers.NewUserMapper(mockUtils)
 
 	email := "testemail@example.com"
 	req := models.CreateUserRequest{
