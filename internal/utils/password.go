@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"golang.org/x/crypto/argon2"
+	"sync"
 )
 
 const (
@@ -20,8 +21,16 @@ type IPasswordUtils interface {
 // PasswordUtils 구현체
 type PasswordUtils struct{}
 
+var (
+	instance *PasswordUtils
+	once     sync.Once
+)
+
 func NewPasswordUtils() *PasswordUtils {
-	return &PasswordUtils{}
+	once.Do(func() {
+		instance = &PasswordUtils{}
+	})
+	return instance
 }
 
 // GenerateSalt 랜덤 salt 생성
