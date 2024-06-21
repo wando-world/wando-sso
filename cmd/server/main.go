@@ -10,15 +10,16 @@ import (
 )
 
 func main() {
+	cfg := config.New()
+
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-
 	e.Validator = utils.NewValidator()
 
-	cfg := config.New()
 	db.InitDB(cfg.DbUrl)
-	router.SetupRoutes(e)
+	jwtUtils := utils.NewJwtUtils(cfg.ATKSecret, cfg.RTKSecret)
+	router.SetupRoutes(e, jwtUtils)
 
 	e.Logger.Fatal(e.Start(cfg.Port))
 }

@@ -11,7 +11,8 @@ type Config struct {
 	Port      string
 	Env       string
 	DbUrl     string
-	JwtSecret string
+	ATKSecret string
+	RTKSecret string
 }
 
 func New() *Config {
@@ -29,7 +30,8 @@ func New() *Config {
 		Port:      getEnv("PORT", ":8081"), // default port
 		Env:       env,
 		DbUrl:     getEnv("DATABASE_URL", ""),
-		JwtSecret: getEnv("JWT_SECRET", ""),
+		ATKSecret: getEnv("ATK_SECRET", ""),
+		RTKSecret: getEnv("RTK_SECRET", ""),
 	}
 }
 

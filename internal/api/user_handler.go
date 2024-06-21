@@ -11,7 +11,7 @@ import (
 )
 
 type IUserHandler interface {
-	CreateUser(c echo.Context) error
+	SignupUser(c echo.Context) error
 }
 
 // UserHandler 구조체에 의존성을 저장
@@ -28,7 +28,9 @@ func NewUserHandler(mapper mappers.IUserMapper, userRepository db.IUserRepositor
 	}
 }
 
-func (h *UserHandler) CreateUser(c echo.Context) error {
+// SignupUser 회원가입
+func (h *UserHandler) SignupUser(c echo.Context) error {
+	// TODO: 가입은 토큰 없게 변경 필요
 	var req models.CreateUserRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "입력값을 확인해주세요.")

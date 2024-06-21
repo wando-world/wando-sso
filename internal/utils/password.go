@@ -22,15 +22,15 @@ type IPasswordUtils interface {
 type PasswordUtils struct{}
 
 var (
-	instance *PasswordUtils
-	once     sync.Once
+	passwordInstance *PasswordUtils
+	passwordOnce     sync.Once
 )
 
 func NewPasswordUtils() *PasswordUtils {
-	once.Do(func() {
-		instance = &PasswordUtils{}
+	passwordOnce.Do(func() {
+		passwordInstance = &PasswordUtils{}
 	})
-	return instance
+	return passwordInstance
 }
 
 // GenerateSalt 랜덤 salt 생성

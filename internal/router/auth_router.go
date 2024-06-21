@@ -8,11 +8,11 @@ import (
 	"github.com/wando-world/wando-sso/internal/utils"
 )
 
-func SetupUserRoutes(g *echo.Group) {
+func SetupAuthRoutes(g *echo.Group, jwtUtils utils.IJwt) {
 	passwordUtils := utils.NewPasswordUtils()
-	userMapper := mappers.NewUserMapper(passwordUtils)
+	authMapper := mappers.NewAuthMapper()
 	userRepository := db.NewUserRepository(db.DB)
-	userHandler := api.NewUserHandler(userMapper, userRepository)
+	authHandler := api.NewAuthHandler(passwordUtils, jwtUtils, authMapper, userRepository)
 
-	g.POST("", userHandler.SignupUser)
+	g.POST("/login", authHandler.Login)
 }

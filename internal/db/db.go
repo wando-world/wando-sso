@@ -4,15 +4,33 @@ import (
 	"github.com/wando-world/wando-sso/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"os"
+	"time"
 )
 
 var DB *gorm.DB
 
 func InitDB(dataSourceName string) {
 	var err error
-	DB, err = gorm.Open(postgres.Open(dataSourceName), &gorm.Config{TranslateError: true})
+
+	// 로그 레벨 설정
+	logLevel := logger.Info
+	if os.Getenv("GO_ENV") == "prod" {
+		logLevel = logger.Error
+	}
+
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logLevel,
+			IgnoreRecordNotFoundError: false,
+			Colorful:                  true,
+		})
+
+	DB, err = gorm.Open(postgres.Open(dataSourceName), &gorm.Config{TranslateError: true, Logger: newLogger})
 	if err != nil {
 		log.Fatalf("[에러] db 커넥션 에러 %v", err)
 	}
