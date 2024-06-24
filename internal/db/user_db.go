@@ -9,6 +9,7 @@ import (
 type IUserRepository interface {
 	CreateUser(user *models.User) error
 	FindUserForLogin(user *models.User) (*models.User, error)
+	FindUserByID(user *models.User) (*models.User, error)
 }
 
 type UserRepository struct {
@@ -41,13 +42,13 @@ func (repo *UserRepository) FindUserForLogin(user *models.User) (*models.User, e
 	return &resultUser, nil
 }
 
-func (repo *UserRepository) GetUserByID(id uint) (*models.User, error) {
-	var user models.User
-	result := repo.DB.First(&user, id)
+func (repo *UserRepository) FindUserByID(user *models.User) (*models.User, error) {
+	var resultUser models.User
+	result := repo.DB.First(&resultUser, user.ID)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return &user, nil
+	return &resultUser, nil
 }
 
 func (repo *UserRepository) UpdateUser(user *models.User) error {

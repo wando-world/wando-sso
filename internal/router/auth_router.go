@@ -15,4 +15,5 @@ func SetupAuthRoutes(g *echo.Group, jwtUtils utils.IJwt) {
 	authHandler := api.NewAuthHandler(passwordUtils, jwtUtils, authMapper, userRepository)
 
 	g.POST("/login", authHandler.Login)
+	g.POST("/refresh", authHandler.RefreshAtk)
 }

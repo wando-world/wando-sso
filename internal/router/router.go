@@ -10,9 +10,12 @@ func SetupRoutes(e *echo.Echo, jwtUtils utils.IJwt) {
 	apiGroup := e.Group("/sso/api/v1")
 
 	SetupEnvRoutes(apiGroup.Group("/env"))
-	SetupAuthRoutes(apiGroup.Group("/auth"), jwtUtils)
+
+	authGroup := apiGroup.Group("/auth")
+	authGroup.Use(middleware.RtkMiddleware(jwtUtils))
+	SetupAuthRoutes(authGroup, jwtUtils)
 
 	userGroup := apiGroup.Group("/user")
-	userGroup.Use(middleware.JwtMiddleware(jwtUtils))
+	userGroup.Use(middleware.AtkMiddleware(jwtUtils))
 	SetupUserRoutes(userGroup)
 }

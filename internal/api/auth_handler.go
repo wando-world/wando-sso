@@ -3,11 +3,13 @@ package api
 import (
 	"encoding/base64"
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"github.com/wando-world/wando-sso/internal/api/models"
+	apiModel "github.com/wando-world/wando-sso/internal/api/models"
 	"github.com/wando-world/wando-sso/internal/db"
 	"github.com/wando-world/wando-sso/internal/mappers"
+	"github.com/wando-world/wando-sso/internal/models"
 	"github.com/wando-world/wando-sso/internal/utils"
 	"gorm.io/gorm"
 	"net/http"
@@ -15,6 +17,7 @@ import (
 
 type IAuthHandler interface {
 	Login(c echo.Context) error
+	RefreshAtk(c echo.Context) error
 }
 
 type AuthHandler struct {
@@ -34,7 +37,7 @@ func NewAuthHandler(passwordUtils utils.IPasswordUtils, jwtUtils utils.IJwt, map
 }
 
 func (a AuthHandler) Login(c echo.Context) error {
-	var req models.LoginRequest
+	var req apiModel.LoginRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "입력값을 확인해주세요.")
 	}
@@ -72,8 +75,34 @@ func (a AuthHandler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "로그인중 서버 에러가 발생했어요ㅠㅠ\n문의를 남겨주세요!")
 	}
 
-	return c.JSON(http.StatusOK, models.LoginResponse{
+	return c.JSON(http.StatusOK, apiModel.LoginResponse{
 		ATK: atk,
 		RTK: rtk,
+	})
+}
+
+func (a AuthHandler) RefreshAtk(c echo.Context) error {
+	loginUser := c.Get("user").(*jwt.Token)
+	claims := loginUser.Claims.(*utils.Claims)
+	id := claims.Id
+
+	user := models.User{
+		Model: gorm.Model{ID: id},
+	}
+
+	foundUser, err := a.UserRepository.FindUserByID(&user)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "유저가 없습니다.")
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "서버가 문제가 있어요.\n어떻게 하셨을때 에러가 났는지 문의에 남겨주세요!")
+	}
+
+	atk, err := a.JwtUtils.GenerateATK(foundUser.ID, foundUser.Role)
+	if err != nil {
+		log.Errorf("atk 발급 에러: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "인증 갱신 중 서버 에러가 발생했어요ㅠㅠ\n문의를 남겨주세요!")
+	}
+	return c.JSON(http.StatusOK, apiModel.RefreshAtkResponse{
+		ATK: atk,
 	})
 }

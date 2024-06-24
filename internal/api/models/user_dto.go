@@ -7,3 +7,9 @@ type CreateUserRequest struct {
 	Email        *string `json:"email" validate:"omitempty,email"`
 	VerifiedCode string  `json:"verifiedCode" validate:"required,alphanum,min=6,max=10"`
 }
+
+type FindSelfResponse struct {
+	Nickname string  `json:"nickname"`
+	UserID   string  `json:"userId"`
+	Email    *string `json:"email"`
+}

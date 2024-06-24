@@ -15,4 +15,5 @@ func SetupUserRoutes(g *echo.Group) {
 	userHandler := api.NewUserHandler(userMapper, userRepository)
 
 	g.POST("", userHandler.SignupUser)
+	g.GET("", userHandler.FindSelfById)
 }
