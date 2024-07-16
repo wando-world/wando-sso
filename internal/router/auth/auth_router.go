@@ -1,4 +1,4 @@
-package router
+package auth
 
 import (
 	"github.com/labstack/echo/v4"

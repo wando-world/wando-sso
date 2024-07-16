@@ -42,7 +42,7 @@ func (h *UserHandler) SignupUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	user, err := h.Mapper.CreateUserRequestToUser(req)
+	user, err := h.Mapper.SignupUserRequestToUser(req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "암호화 중 에러가 발생했습니다!\n잠시뒤 진행해 주세요!")
 	}

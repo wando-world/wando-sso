@@ -33,7 +33,7 @@ func (m *MockUtils) VerifyPassword(password, encodedHash string, salt []byte) bo
 	return args.Bool(0)
 }
 
-func TestCreateUserRequestToUser(t *testing.T) {
+func TestSignupUserRequestToUser(t *testing.T) {
 	mockUtils := new(MockUtils)
 	mockUtils.On("GenerateSalt").Return([]byte("mockSalt"), nil)
 	mockUtils.On("HashPassword", "testpassword", []byte("mockSalt")).Return("hashedPassword")
@@ -49,7 +49,7 @@ func TestCreateUserRequestToUser(t *testing.T) {
 		VerifiedCode: "testverifiedcode",
 	}
 
-	user, err := mapper.CreateUserRequestToUser(req)
+	user, err := mapper.SignupUserRequestToUser(req)
 
 	assert.NoError(t, err)
 	assert.Equal(t, req.Nickname, user.Nickname)
@@ -61,7 +61,7 @@ func TestCreateUserRequestToUser(t *testing.T) {
 	assert.Equal(t, base64.RawStdEncoding.EncodeToString([]byte("mockSalt")), user.Salt)
 }
 
-func TestCreateUserRequestToUser_Error(t *testing.T) {
+func TestSignupUserRequestToUser_Error(t *testing.T) {
 	mockUtils := new(MockUtils)
 	mockUtils.On("GenerateSalt").Return(nil, fmt.Errorf("salt generation error"))
 
@@ -76,7 +76,7 @@ func TestCreateUserRequestToUser_Error(t *testing.T) {
 		VerifiedCode: "testverifiedcode",
 	}
 
-	user, err := mapper.CreateUserRequestToUser(req)
+	user, err := mapper.SignupUserRequestToUser(req)
 
 	assert.Error(t, err)
 	assert.Empty(t, user)

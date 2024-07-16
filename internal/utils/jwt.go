@@ -16,11 +16,13 @@ type IJwt interface {
 	GenerateATK(id uint, role string) (string, error)
 	GenerateRTK(id uint) (string, error)
 	ParseToken(tokenString string) (*Claims, error)
+	GetAtkSecret() []byte
+	GetRtkSecret() []byte
 }
 
 type JwtUtils struct {
-	AtkSecret []byte
-	RtkSecret []byte
+	atkSecret []byte
+	rtkSecret []byte
 }
 
 var (
@@ -30,7 +32,7 @@ var (
 
 func NewJwtUtils(atkSecret, rtkSecret string) *JwtUtils {
 	jwtOnce.Do(func() {
-		jwtInstance = &JwtUtils{AtkSecret: []byte(atkSecret), RtkSecret: []byte(rtkSecret)}
+		jwtInstance = &JwtUtils{atkSecret: []byte(atkSecret), rtkSecret: []byte(rtkSecret)}
 	})
 	return jwtInstance
 }
@@ -46,7 +48,7 @@ func (j *JwtUtils) GenerateATK(id uint, role string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-	return token.SignedString(j.AtkSecret)
+	return token.SignedString(j.GetAtkSecret())
 }
 
 func (j *JwtUtils) GenerateRTK(id uint) (string, error) {
@@ -58,12 +60,12 @@ func (j *JwtUtils) GenerateRTK(id uint) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-	return token.SignedString(j.RtkSecret)
+	return token.SignedString(j.GetRtkSecret())
 }
 
 func (j *JwtUtils) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
-		return j.AtkSecret, nil
+		return j.atkSecret, nil
 	})
 
 	if err != nil {
@@ -74,4 +76,12 @@ func (j *JwtUtils) ParseToken(tokenString string) (*Claims, error) {
 		return claims, nil
 	}
 	return nil, err
+}
+
+func (j *JwtUtils) GetAtkSecret() []byte {
+	return j.atkSecret
+}
+
+func (j *JwtUtils) GetRtkSecret() []byte {
+	return j.rtkSecret
 }

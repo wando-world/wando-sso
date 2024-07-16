@@ -18,7 +18,7 @@ func AtkMiddleware(jwtUtils utils.IJwt) echo.MiddlewareFunc {
 			}
 			return echo.NewHTTPError(http.StatusBadRequest, "인증된 유저가 아니군요!\n로그인이 필요해요!")
 		},
-		SigningKey:    jwtUtils.(*utils.JwtUtils).AtkSecret,
+		SigningKey:    jwtUtils.GetAtkSecret(),
 		SigningMethod: "HS512",
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
 			return new(utils.Claims)
@@ -40,7 +40,7 @@ func RtkMiddleware(jwtUtils utils.IJwt) echo.MiddlewareFunc {
 			}
 			return echo.NewHTTPError(http.StatusBadRequest, "인증된 유저가 아니군요!\n로그인이 필요해요!")
 		},
-		SigningKey:    jwtUtils.(*utils.JwtUtils).RtkSecret,
+		SigningKey:    jwtUtils.GetRtkSecret(),
 		SigningMethod: "HS512",
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
 			return new(utils.Claims)

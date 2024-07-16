@@ -1,4 +1,4 @@
-package test
+package user
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ type MockUserMapper struct {
 	mock.Mock
 }
 
-func (m *MockUserMapper) CreateUserRequestToUser(req models2.CreateUserRequest) (models.User, error) {
+func (m *MockUserMapper) SignupUserRequestToUser(req models2.CreateUserRequest) (models.User, error) {
 	args := m.Called(req)
 	return args.Get(0).(models.User), args.Error(1)
 }
@@ -28,6 +28,22 @@ func (m *MockUserMapper) CreateUserRequestToUser(req models2.CreateUserRequest) 
 // MockUserRepository is a mock for IUserRepository
 type MockUserRepository struct {
 	mock.Mock
+}
+
+func (m *MockUserRepository) FindUserForLogin(user *models.User) (*models.User, error) {
+	args := m.Called(user)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.User), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+func (m *MockUserRepository) FindUserByID(user *models.User) (*models.User, error) {
+	args := m.Called(user)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.User), args.Error(1)
+	}
+	return nil, args.Error(1)
 }
 
 func (m *MockUserRepository) CreateUser(user *models.User) error {
@@ -58,7 +74,7 @@ func setupTestEnv() testEnv {
 	}
 }
 
-func newCreateUserRequestHelper(userRequest string, env testEnv) (*httptest.ResponseRecorder, echo.Context) {
+func newSignupUserRequestHelper(userRequest string, env testEnv) (*httptest.ResponseRecorder, echo.Context) {
 	req := httptest.NewRequest(http.MethodPost, "/sso/api/v1/user", bytes.NewReader([]byte(userRequest)))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
@@ -66,7 +82,7 @@ func newCreateUserRequestHelper(userRequest string, env testEnv) (*httptest.Resp
 	return rec, c
 }
 
-func TestCreateUser(t *testing.T) {
+func TestSignupUser(t *testing.T) {
 	env := setupTestEnv()
 
 	// Test cases
@@ -81,7 +97,7 @@ func TestCreateUser(t *testing.T) {
 			name:        "정상 Request",
 			userRequest: `{"nickname":"wando","userId":"wando1234","password":"wando12345","verifiedCode":"asd123"}`,
 			setupMocks: func() {
-				env.mockMapper.On("CreateUserRequestToUser", mock.Anything).Return(models.User{Nickname: "wando"}, nil)
+				env.mockMapper.On("SignupUserRequestToUser", mock.Anything).Return(models.User{Nickname: "wando"}, nil)
 				env.mockRepo.On("CreateUser", mock.Anything).Return(nil)
 			},
 			wantStatus: http.StatusCreated,
@@ -91,7 +107,7 @@ func TestCreateUser(t *testing.T) {
 			name:        "정상 Request add email",
 			userRequest: `{"nickname":"wando","userId":"wando1234","password":"wando12345","email":"kdw1521@naver.com","verifiedCode":"asd123"}`,
 			setupMocks: func() {
-				env.mockMapper.On("CreateUserRequestToUser", mock.Anything).Return(models.User{Nickname: "wando"}, nil)
+				env.mockMapper.On("SignupUserRequestToUser", mock.Anything).Return(models.User{Nickname: "wando"}, nil)
 				env.mockRepo.On("CreateUser", mock.Anything).Return(nil)
 			},
 			wantStatus: http.StatusCreated,
@@ -137,14 +153,14 @@ func TestCreateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setupMocks()
-			rec, c := newCreateUserRequestHelper(tt.userRequest, env)
+			rec, c := newSignupUserRequestHelper(tt.userRequest, env)
 
-			// Invoke the CreateUser method
-			err := env.handler.CreateUser(c)
+			// Invoke the SignupUser method
+			err := env.handler.SignupUser(c)
 
 			// Check if an error was expected
 			if (err != nil) != tt.wantError {
-				t.Errorf("CreateUser() error = %v, wantErr %v", err, tt.wantError)
+				t.Errorf("SignupUser() error = %v, wantErr %v", err, tt.wantError)
 			}
 
 			// If an error occurred, assert the status code from the HTTP error

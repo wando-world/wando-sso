@@ -8,7 +8,7 @@ import (
 )
 
 type IUserMapper interface {
-	CreateUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error)
+	SignupUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error)
 }
 
 type UserMapper struct {
@@ -19,7 +19,7 @@ func NewUserMapper(p utils.IPasswordUtils) *UserMapper {
 	return &UserMapper{passwordUtils: p}
 }
 
-func (m *UserMapper) CreateUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error) {
+func (m *UserMapper) SignupUserRequestToUser(req apiModels.CreateUserRequest) (models.User, error) {
 	user := models.User{
 		Nickname:     req.Nickname,
 		UserID:       req.UserID,
