@@ -1,0 +1,99 @@
+package postgresql
+
+import (
+	"github.com/wando-world/wando-sso/domain"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
+	"os"
+	"time"
+)
+
+var DB *gorm.DB
+
+func InitDB(dataSourceName string) {
+	var err error
+
+	// 로그 레벨 설정
+	logLevel := logger.Info
+	if os.Getenv("GO_ENV") == "prod" {
+		logLevel = logger.Error
+	}
+
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logLevel,
+			IgnoreRecordNotFoundError: false,
+			Colorful:                  true,
+		})
+
+	DB, err = gorm.Open(postgres.Open(dataSourceName), &gorm.Config{TranslateError: true, Logger: newLogger})
+	if err != nil {
+		log.Fatalf("[에러] db 커넥션 에러 %v", err)
+	}
+
+	log.Println("DB 커넥션 성공")
+
+	// ENUM 검사 및 없으면 생성
+	if err := ensureRoleTypeExists(); err != nil {
+		log.Fatalf("[에러] role_type ENUM 생성 에러: %v", err)
+	}
+
+	// 환경 설정에 따른 마이그레이션 실행
+	performMigration(os.Getenv("GO_ENV"))
+}
+
+// ensureRoleTypeExists 'role_type' ENUM 있는지 체크, 없다면 생성
+func ensureRoleTypeExists() error {
+	var exists bool
+	err := DB.Raw("SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role_type')").Scan(&exists).Error
+	if err != nil {
+		return err
+	}
+
+	// ENUM 타입이 이미 존재하면 함수 종료
+	if exists {
+		log.Println("'role_type' ENUM 이미 존재함.")
+		return nil
+	}
+
+	// ENUM 타입 생성
+	err = DB.Exec("CREATE TYPE role_type AS ENUM ('ADMIN', 'GENERAL')").Error
+	if err != nil {
+		return err
+	}
+
+	log.Println("'role_type' ENUM 생성 완료.")
+	return nil
+}
+
+// performMigration 환경 설정에 따라 데이터베이스 마이그레이션을 수행
+func performMigration(environment string) {
+	if environment != "prod" {
+		migrateDatabase()
+	} else {
+		log.Println("운영 환경에서는 데이터베이스 마이그레이션을 건너뜁니다.")
+	}
+}
+
+// migrateDatabase 모델에 대한 데이터베이스 마이그레이션을 수행
+func migrateDatabase() {
+	if err := DB.AutoMigrate(&domain.User{}); err != nil {
+		log.Fatalf("[에러] 마이그레이션 실패: %v", err)
+	}
+	log.Println("데이터베이스 마이그레이션 성공적으로 완료됨")
+}
+
+func CloseDB() {
+	db, err := DB.DB()
+	if err != nil {
+		log.Fatalf("[에러] DB 객체 가져오기 실패: %v", err)
+	}
+	if err := db.Close(); err != nil {
+		log.Fatalf("[에러] DB 연결 종료 실패: %v", err)
+	}
+	log.Println("DB 연결 종료")
+}
