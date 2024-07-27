@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"testing"
 )
 
 type Config struct {
@@ -22,6 +23,24 @@ var (
 )
 
 func New() *Config {
+	if testing.Testing() {
+		// 테스트 환경에서는 새 인스턴스 반환
+		env := os.Getenv("GO_ENV")
+		envFile := fmt.Sprintf(".env.%s", env)
+		if err := godotenv.Load(envFile); err != nil {
+			log.Fatalf("[에러] %s file 불러오기 실패: %v", envFile, err)
+		}
+
+		atkSecret := getEnv("ATK_SECRET", "")
+		rtkSecret := getEnv("RTK_SECRET", "")
+		return &Config{
+			Port:      getEnv("PORT", ":8081"), // default port
+			Env:       env,
+			DbUrl:     getEnv("DATABASE_URL", ""),
+			ATKSecret: atkSecret,
+			RTKSecret: rtkSecret,
+		}
+	}
 	configOnce.Do(func() {
 		// GO_ENV 로 해당 하는 .env 파일 로드
 		env := os.Getenv("GO_ENV")

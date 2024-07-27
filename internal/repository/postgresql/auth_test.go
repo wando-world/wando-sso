@@ -1,9 +1,10 @@
-package postgresql
+package postgresql_test
 
 import (
 	"context"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/wando-world/wando-sso/internal/repository/postgresql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"testing"
@@ -36,7 +37,7 @@ func TestAuthRepository_FindUserForLogin(t *testing.T) {
 	gormDB, mock, teardown := setupAuthMockDB(t)
 	defer teardown()
 
-	repo := NewAuthRepository(gormDB)
+	repo := postgresql.NewAuthRepository(gormDB)
 
 	// 예상되는 쿼리와 결과 설정
 	rows := sqlmock.NewRows([]string{"id", "user_id", "verified_code", "nickname", "email"}).
@@ -66,7 +67,7 @@ func TestAuthRepository_FindUserById(t *testing.T) {
 	gormDB, mock, teardown := setupAuthMockDB(t)
 	defer teardown()
 
-	repo := NewAuthRepository(gormDB)
+	repo := postgresql.NewAuthRepository(gormDB)
 
 	// 예상되는 쿼리와 결과 설정
 	rows := sqlmock.NewRows([]string{"id", "user_id", "verified_code", "nickname", "email"}).

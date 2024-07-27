@@ -1,10 +1,11 @@
-package postgresql
+package postgresql_test
 
 import (
 	"context"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/wando-world/wando-sso/domain"
+	"github.com/wando-world/wando-sso/internal/repository/postgresql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"testing"
@@ -36,7 +37,7 @@ func TestUserRepository_CreateUser(t *testing.T) {
 	gormDB, mock, teardown := setupUserMockDB(t)
 	defer teardown()
 
-	repo := NewUserRepository(gormDB)
+	repo := postgresql.NewUserRepository(gormDB)
 
 	user := &domain.User{
 		Nickname:     "testuser",
@@ -66,7 +67,7 @@ func TestUserRepository_FindUserById(t *testing.T) {
 	gormDB, mock, teardown := setupUserMockDB(t)
 	defer teardown()
 
-	repo := NewUserRepository(gormDB)
+	repo := postgresql.NewUserRepository(gormDB)
 
 	// 예상되는 쿼리와 결과 설정
 	userID := uint(1)
