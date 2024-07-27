@@ -6,35 +6,32 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/wando-world/wando-sso/domain"
-	apiModel "github.com/wando-world/wando-sso/internal/rest/dto"
-	"github.com/wando-world/wando-sso/internal/rest/mappers"
-	"github.com/wando-world/wando-sso/internal/rest/middleware"
+	"github.com/wando-world/wando-sso/user"
+	"github.com/wando-world/wando-sso/utils"
 	"gorm.io/gorm"
 	"net/http"
 	"time"
 )
 
 type UserService interface {
-	SignupUser(ctx context.Context, u *domain.User) error
+	SignupUser(ctx context.Context, req user.SignupUserReq) error
 	FindSelfById(ctx context.Context, id uint) (*domain.User, error)
 }
 
 type UserHandler struct {
 	UserService UserService
-	UserMapper  mappers.IUserMapper
 }
 
-func NewUserHandler(g *echo.Group, us UserService, m mappers.IUserMapper) {
+func NewUserHandler(g *echo.Group, us UserService) {
 	handler := &UserHandler{
 		UserService: us,
-		UserMapper:  m,
 	}
 	g.POST("", handler.SignupUser)
 	g.GET("", handler.FindSelfById)
 }
 
 func (uh *UserHandler) SignupUser(c echo.Context) error {
-	var req apiModel.CreateUserRequest
+	var req user.SignupUserReq
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "입력값을 확인해주세요.")
 	}
@@ -42,15 +39,10 @@ func (uh *UserHandler) SignupUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	user, err := uh.UserMapper.SignupUserRequestToUser(req)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "암호화 중 에러가 발생했습니다!\n잠시뒤 진행해 주세요!")
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 1*time.Second)
 	defer cancel()
 
-	err = uh.UserService.SignupUser(ctx, &user)
+	err := uh.UserService.SignupUser(ctx, req)
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return echo.NewHTTPError(http.StatusConflict, "id 가 이미 있습니다!")
 	} else if err != nil {
@@ -59,12 +51,12 @@ func (uh *UserHandler) SignupUser(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "가입 실패!")
 	}
-	return c.JSON(http.StatusCreated, user.Nickname)
+	return c.JSON(http.StatusCreated, nil)
 }
 
 func (uh *UserHandler) FindSelfById(c echo.Context) error {
 	loginUser := c.Get("user").(*jwt.Token)
-	claims := loginUser.Claims.(*middleware.Claims)
+	claims := loginUser.Claims.(*utils.Claims)
 	id := claims.Id
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 1*time.Second)
@@ -80,7 +72,7 @@ func (uh *UserHandler) FindSelfById(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "서버가 문제가 있어요.\n어떻게 하셨을때 에러가 났는지 문의에 남겨주세요!")
 	}
 
-	return c.JSON(http.StatusOK, apiModel.FindSelfResponse{
+	return c.JSON(http.StatusOK, user.FindSelfResponse{
 		Nickname: foundUser.Nickname,
 		UserID:   foundUser.UserID,
 		Email:    foundUser.Email,

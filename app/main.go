@@ -7,10 +7,8 @@ import (
 	"github.com/wando-world/wando-sso/internal/config"
 	"github.com/wando-world/wando-sso/internal/repository/postgresql"
 	"github.com/wando-world/wando-sso/internal/rest"
-	"github.com/wando-world/wando-sso/internal/rest/mappers"
 	restmiddleware "github.com/wando-world/wando-sso/internal/rest/middleware"
 	"github.com/wando-world/wando-sso/user"
-	"github.com/wando-world/wando-sso/utils"
 )
 
 func main() {
@@ -20,12 +18,6 @@ func main() {
 	// prepare postgresql database
 	postgresql.InitDB(cfg.DbUrl)
 	defer postgresql.CloseDB()
-
-	// prepare jwt, utils, mappers
-	jwtUtils := restmiddleware.NewJwtUtils(cfg.ATKSecret, cfg.RTKSecret)
-	passwordUtils := utils.NewPasswordUtils()
-	authMapper := mappers.NewAuthMapper()
-	userMapper := mappers.NewUserMapper(passwordUtils)
 
 	// prepare echo
 	e := echo.New()
@@ -38,11 +30,11 @@ func main() {
 
 	// prepare auth api
 	authGroup := apiGroup.Group("/auth")
-	authGroup.Use(restmiddleware.RtkMiddleware(jwtUtils))
+	authGroup.Use(restmiddleware.RtkMiddleware())
 
 	// prepare user api
 	userGroup := apiGroup.Group("/user")
-	userGroup.Use(restmiddleware.AtkMiddleware(jwtUtils))
+	userGroup.Use(restmiddleware.AtkMiddleware())
 
 	// prepare repository
 	authRepo := postgresql.NewAuthRepository(postgresql.DB)
@@ -52,8 +44,8 @@ func main() {
 	authSvc := auth.NewService(authRepo)
 	userSvc := user.NewService(userRepo)
 
-	rest.NewAuthHandler(authGroup, authSvc, authMapper, passwordUtils, jwtUtils)
-	rest.NewUserHandler(userGroup, userSvc, userMapper)
+	rest.NewAuthHandler(authGroup, authSvc)
+	rest.NewUserHandler(userGroup, userSvc)
 
 	e.Logger.Fatal(e.Start(cfg.Port))
 }

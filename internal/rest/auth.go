@@ -2,15 +2,13 @@ package rest
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"github.com/wando-world/wando-sso/auth"
 	"github.com/wando-world/wando-sso/domain"
-	apiModel "github.com/wando-world/wando-sso/internal/rest/dto"
-	"github.com/wando-world/wando-sso/internal/rest/mappers"
-	"github.com/wando-world/wando-sso/internal/rest/middleware"
+	"github.com/wando-world/wando-sso/internal/rest/dto"
 	"github.com/wando-world/wando-sso/utils"
 	"gorm.io/gorm"
 	"net/http"
@@ -18,29 +16,25 @@ import (
 )
 
 type AuthService interface {
-	Login(ctx context.Context, userId, verifiedCode string) (*domain.User, error)
-	RefreshAtk(ctx context.Context, id uint) (*domain.User, error)
+	FindUser(ctx context.Context, req auth.FindUserReq) (*domain.User, error)
+	CheckPassword(salt, encryptPassword, plaintextPassword string) (bool, error)
+	GenerateJWT(id uint, role string) (*auth.GenerateJWTRes, error)
+	RefreshAtk(ctx context.Context, id uint) (*auth.RefreshAtkRes, error)
 }
 
 type AuthHandler struct {
-	AuthService   AuthService
-	AuthMapper    mappers.IAuthMapper
-	PasswordUtils utils.IPasswordUtils
-	JwtService    middleware.IJwt
+	AuthService AuthService
 }
 
-func NewAuthHandler(g *echo.Group, as AuthService, m mappers.IAuthMapper, p utils.IPasswordUtils, js middleware.IJwt) {
+func NewAuthHandler(g *echo.Group, as AuthService) {
 	handler := &AuthHandler{
-		AuthService:   as,
-		AuthMapper:    m,
-		PasswordUtils: p,
-		JwtService:    js,
+		AuthService: as,
 	}
 	g.POST("/login", handler.Login)
 }
 
 func (ah *AuthHandler) Login(c echo.Context) error {
-	var req apiModel.LoginRequest
+	var req dto.LoginRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "입력값을 확인해주세요.")
 	}
@@ -48,12 +42,13 @@ func (ah *AuthHandler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	user := ah.AuthMapper.LoginRequestToUser(req)
-
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 1*time.Second)
 	defer cancel()
 
-	foundUser, err := ah.AuthService.Login(ctx, user.UserID, user.VerifiedCode)
+	foundUser, err := ah.AuthService.FindUser(ctx, auth.FindUserReq{
+		UserId:       req.UserID,
+		VerifiedCode: req.VerifiedCode,
+	})
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "유저가 없습니다.")
 	} else if err != nil {
@@ -64,43 +59,33 @@ func (ah *AuthHandler) Login(c echo.Context) error {
 	}
 
 	// 비밀번호 체크
-	decoded, err := base64.RawStdEncoding.DecodeString(foundUser.Salt)
+	checkPassword, err := ah.AuthService.CheckPassword(foundUser.Salt, foundUser.Password, req.Password)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "서버가 문제가 있어요.\n어떻게 하셨을때 에러가 났는지 문의에 남겨주세요!")
 	}
-	if ok := ah.PasswordUtils.VerifyPassword(req.Password, foundUser.Password, decoded); !ok {
+	if !checkPassword {
 		return echo.NewHTTPError(http.StatusBadRequest, "아이디 또는 비밀번호를 확인해주세요!")
 	}
 
-	// ATK 발급
-	atk, err := ah.JwtService.GenerateATK(foundUser.ID, foundUser.Role)
+	// JWT 발급
+	jwts, err := ah.AuthService.GenerateJWT(foundUser.ID, foundUser.Role)
 	if err != nil {
-		log.Errorf("atk 발급 에러: %v", err)
+		log.Errorf("jwt 발급 에러: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "로그인중 서버 에러가 발생했어요ㅠㅠ\n문의를 남겨주세요!")
 	}
 
-	// RTK 발급
-	rtk, err := ah.JwtService.GenerateRTK(foundUser.ID)
-	if err != nil {
-		log.Errorf("rtk 발급 에러: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "로그인중 서버 에러가 발생했어요ㅠㅠ\n문의를 남겨주세요!")
-	}
-
-	return c.JSON(http.StatusOK, apiModel.LoginResponse{
-		ATK: atk,
-		RTK: rtk,
-	})
+	return c.JSON(http.StatusOK, jwts)
 }
 
 func (ah *AuthHandler) RefreshAtk(c echo.Context) error {
 	loginUser := c.Get("user").(*jwt.Token)
-	claims := loginUser.Claims.(*middleware.Claims)
+	claims := loginUser.Claims.(*utils.Claims)
 	id := claims.Id
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 1*time.Second)
 	defer cancel()
 
-	foundUser, err := ah.AuthService.RefreshAtk(ctx, id)
+	atk, err := ah.AuthService.RefreshAtk(ctx, id)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "유저가 없습니다.")
 	} else if err != nil {
@@ -110,12 +95,5 @@ func (ah *AuthHandler) RefreshAtk(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "서버가 문제가 있어요.\n어떻게 하셨을때 에러가 났는지 문의에 남겨주세요!")
 	}
 
-	atk, err := ah.JwtService.GenerateATK(foundUser.ID, foundUser.Role)
-	if err != nil {
-		log.Errorf("atk 발급 에러: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "인증 갱신 중 서버 에러가 발생했어요ㅠㅠ\n문의를 남겨주세요!")
-	}
-	return c.JSON(http.StatusOK, apiModel.RefreshAtkResponse{
-		ATK: atk,
-	})
+	return c.JSON(http.StatusOK, atk)
 }

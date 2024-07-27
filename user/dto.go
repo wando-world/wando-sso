@@ -1,6 +1,6 @@
-package dto
+package user
 
-type CreateUserRequest struct {
+type SignupUserReq struct {
 	Nickname     string  `json:"nickname" validate:"required"`
 	UserID       string  `json:"userId" validate:"required,min=5,max=99,alphanum"`
 	Password     string  `json:"password" validate:"required,min=8,max=99,alphanum"`

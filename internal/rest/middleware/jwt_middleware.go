@@ -5,11 +5,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/wando-world/wando-sso/internal/config"
+	"github.com/wando-world/wando-sso/utils"
 	"net/http"
 	"strings"
 )
 
-func AtkMiddleware(jwtUtils IJwt) echo.MiddlewareFunc {
+func AtkMiddleware() echo.MiddlewareFunc {
+	jwtUtils := utils.NewJwtUtils(config.GetConfig().ATKSecret, config.GetConfig().RTKSecret)
+
 	return echojwt.WithConfig(echojwt.Config{
 		ErrorHandler: func(c echo.Context, err error) error {
 			if errors.Is(err, jwt.ErrTokenExpired) {
@@ -20,7 +24,7 @@ func AtkMiddleware(jwtUtils IJwt) echo.MiddlewareFunc {
 		SigningKey:    jwtUtils.GetAtkSecret(),
 		SigningMethod: "HS512",
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
-			return new(Claims)
+			return new(utils.Claims)
 		},
 		Skipper: func(c echo.Context) bool {
 			if strings.HasPrefix(c.Path(), "/sso/api/v1/user") && c.Request().Method == http.MethodPost { // 회원 가입만 skip
@@ -31,7 +35,8 @@ func AtkMiddleware(jwtUtils IJwt) echo.MiddlewareFunc {
 	})
 }
 
-func RtkMiddleware(jwtUtils IJwt) echo.MiddlewareFunc {
+func RtkMiddleware() echo.MiddlewareFunc {
+	jwtUtils := utils.NewJwtUtils(config.GetConfig().ATKSecret, config.GetConfig().RTKSecret)
 	return echojwt.WithConfig(echojwt.Config{
 		ErrorHandler: func(c echo.Context, err error) error {
 			if errors.Is(err, jwt.ErrTokenExpired) {
@@ -42,7 +47,7 @@ func RtkMiddleware(jwtUtils IJwt) echo.MiddlewareFunc {
 		SigningKey:    jwtUtils.GetRtkSecret(),
 		SigningMethod: "HS512",
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
-			return new(Claims)
+			return new(utils.Claims)
 		},
 		Skipper: func(c echo.Context) bool {
 			if strings.HasSuffix(c.Path(), "refresh") {

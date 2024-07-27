@@ -12,12 +12,6 @@ const (
 	HashLength = 32
 )
 
-type IPasswordUtils interface {
-	GenerateSalt() ([]byte, error)
-	HashPassword(password string, salt []byte) string
-	VerifyPassword(password, encodedHash string, salt []byte) bool
-}
-
 // PasswordUtils 구현체
 type PasswordUtils struct{}
 

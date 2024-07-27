@@ -1,4 +1,4 @@
-package middleware
+package utils
 
 import (
 	"github.com/golang-jwt/jwt/v5"
@@ -10,14 +10,6 @@ type Claims struct {
 	Id   uint   `json:"id"`
 	Role string `json:"role"`
 	jwt.RegisteredClaims
-}
-
-type IJwt interface {
-	GenerateATK(id uint, role string) (string, error)
-	GenerateRTK(id uint) (string, error)
-	ParseToken(tokenString string) (*Claims, error)
-	GetAtkSecret() []byte
-	GetRtkSecret() []byte
 }
 
 type JwtUtils struct {
