@@ -5,6 +5,7 @@ import (
 	"github.com/wando-world/wando-sso/domain"
 	"gorm.io/gorm"
 	"sync"
+	"testing"
 )
 
 type UserRepository struct {
@@ -17,6 +18,10 @@ var (
 )
 
 func NewUserRepository(db *gorm.DB) *UserRepository {
+	if testing.Testing() {
+		// 테스트 환경에서는 새 인스턴스 반환
+		return &UserRepository{DB: db}
+	}
 	userOnce.Do(func() {
 		userInstance = &UserRepository{DB: db}
 	})

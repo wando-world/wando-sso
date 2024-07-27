@@ -5,6 +5,7 @@ import (
 	"github.com/wando-world/wando-sso/domain"
 	"gorm.io/gorm"
 	"sync"
+	"testing"
 )
 
 type AuthRepository struct {
@@ -17,6 +18,11 @@ var (
 )
 
 func NewAuthRepository(db *gorm.DB) *AuthRepository {
+	if testing.Testing() {
+		// 테스트 환경에서는 새 인스턴스 반환
+		return &AuthRepository{DB: db}
+	}
+
 	authOnce.Do(func() {
 		authInstance = &AuthRepository{DB: db}
 	})
