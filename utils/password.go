@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"golang.org/x/crypto/argon2"
 	"sync"
+	"testing"
 )
 
 const (
@@ -21,6 +22,9 @@ var (
 )
 
 func NewPasswordUtils() *PasswordUtils {
+	if testing.Testing() {
+		return &PasswordUtils{}
+	}
 	passwordOnce.Do(func() {
 		passwordInstance = &PasswordUtils{}
 	})

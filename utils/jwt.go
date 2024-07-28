@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/golang-jwt/jwt/v5"
 	"sync"
+	"testing"
 	"time"
 )
 
@@ -23,6 +24,9 @@ var (
 )
 
 func NewJwtUtils(atkSecret, rtkSecret string) *JwtUtils {
+	if testing.Testing() {
+		return &JwtUtils{atkSecret: []byte(atkSecret), rtkSecret: []byte(rtkSecret)}
+	}
 	jwtOnce.Do(func() {
 		jwtInstance = &JwtUtils{atkSecret: []byte(atkSecret), rtkSecret: []byte(rtkSecret)}
 	})
@@ -55,9 +59,12 @@ func (j *JwtUtils) GenerateRTK(id uint) (string, error) {
 	return token.SignedString(j.GetRtkSecret())
 }
 
-func (j *JwtUtils) ParseToken(tokenString string) (*Claims, error) {
+func (j *JwtUtils) ParseToken(tokenString, tokenType string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
-		return j.atkSecret, nil
+		if tokenType == "atk" {
+			return j.atkSecret, nil
+		}
+		return j.rtkSecret, nil
 	})
 
 	if err != nil {
